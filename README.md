@@ -17,7 +17,7 @@ Data comes from the city's open data portal ([data.sf.gov](https://data.sf.gov))
 
 ## Who built what
 
-This was a team project. My main part was the scheduled email worker; the other pieces were team efforts. AI tools were used heavily throughout: the map app was generated in [Lovable](https://lovable.dev), and AI coding assistants helped with the rest. That is how four working pieces came together during one hackathon, and it is why the code reads the way it does.
+This was a team project. My main part was the scheduled email worker; the other pieces were team efforts. We worked with AI-assisted tooling throughout ([Lovable](https://lovable.dev) for the map app, coding assistants elsewhere), which is how a small team shipped four working pieces during one event.
 
 ## Run it
 
