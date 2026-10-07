@@ -1,0 +1,10 @@
+project_id = "your-project-id"
+
+[functions.fetch-location-data]
+verify_jwt = false
+
+[functions.search-addresses]
+verify_jwt = false
+
+[functions.seed-sample-data]
+verify_jwt = false

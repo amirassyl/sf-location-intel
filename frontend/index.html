@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF OpenData Search</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [address, setAddress] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [results, setResults] = useState(null);
+            const [error, setError] = useState(null);
+            const [activeTab, setActiveTab] = useState('anomalies');
+
+            const API_BASE_URL = 'http://localhost:8000';
+
+            const searchAddress = async (e) => {
+                e.preventDefault();
+                if (!address.trim()) return;
+
+                setLoading(true);
+                setError(null);
+                setResults(null);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/search?address=${encodeURIComponent(address)}`);
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    setResults(data);
+                    setActiveTab('anomalies');
+                } catch (err) {
+                    setError(err.message || 'Failed to fetch data');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const clearSearch = () => {
+                setAddress('');
+                setResults(null);
+                setError(null);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+                    {/* Header */}
+                    <div className="bg-white shadow-md">
+                        <div className="max-w-7xl mx-auto px-4 py-6">
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                🏙️ San Francisco OpenData Search
+                            </h1>
+                            <p className="text-gray-600 mt-1">
+                                Search for permits, crimes, and businesses by address
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="max-w-7xl mx-auto px-4 py-8">
+                        <form onSubmit={searchAddress} className="mb-8">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder="Enter SF address (e.g., 1600 Market Street)"
+                                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    disabled={loading}
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={loading || !address.trim()}
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors"
+                                >
+                                    {loading ? 'Searching...' : 'Search'}
+                                </button>
+                                {results && (
+                                    <button
+                                        type="button"
+                                        onClick={clearSearch}
+                                        className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold transition-colors"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                        </form>
+
+                        {/* Loading State */}
+                        {loading && (
+                            <div className="text-center py-12">
+                                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                <p className="text-gray-600 mt-4">Searching SF OpenData...</p>
+                            </div>
+                        )}
+
+                        {/* Error State */}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                <div className="flex items-start">
+                                    <span className="text-2xl mr-3">⚠️</span>
+                                    <div>
+                                        <h3 className="font-semibold text-red-800">Error</h3>
+                                        <p className="text-red-600">{error}</p>
+                                        <p className="text-sm text-red-500 mt-2">
+                                            Make sure the backend is running on {API_BASE_URL}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results */}
+                        {results && !loading && (
+                            <div>
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <div className="text-sm text-gray-600 font-medium">Total Permits</div>
+                                        <div className="text-3xl font-bold text-blue-600 mt-2">
+                                            {results.summary.total_permits}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <div className="text-sm text-gray-600 font-medium">Total Crimes</div>
+                                        <div className="text-3xl font-bold text-red-600 mt-2">
+                                            {results.summary.total_crimes}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-lg shadow p-6">
+                                        <div className="text-sm text-gray-600 font-medium">Total Businesses</div>
+                                        <div className="text-3xl font-bold text-green-600 mt-2">
+                                            {results.summary.total_businesses}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Address Info */}
+                                <div className="bg-white rounded-lg shadow p-4 mb-6">
+                                    <div className="text-sm text-gray-600">Searched Address</div>
+                                    <div className="font-semibold text-gray-900">{results.address}</div>
+                                    <div className="text-sm text-gray-500">Normalized: {results.normalized_address}</div>
+                                </div>
+
+                                {/* Tabs */}
+                                <div className="bg-white rounded-lg shadow overflow-hidden">
+                                    <div className="flex border-b">
+                                        <button
+                                            onClick={() => setActiveTab('anomalies')}
+                                            className={`flex-1 px-6 py-3 font-semibold ${
+                                                activeTab === 'anomalies'
+                                                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                                                    : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            🚨 Anomalies ({results.anomalies.length})
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('permits')}
+                                            className={`flex-1 px-6 py-3 font-semibold ${
+                                                activeTab === 'permits'
+                                                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                                                    : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            📋 Permits ({results.permits.length})
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('businesses')}
+                                            className={`flex-1 px-6 py-3 font-semibold ${
+                                                activeTab === 'businesses'
+                                                    ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-700'
+                                                    : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            🏢 Businesses ({results.businesses.length})
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6">
+                                        {/* Anomalies Tab */}
+                                        {activeTab === 'anomalies' && (
+                                            <div>
+                                                {results.anomalies.length === 0 ? (
+                                                    <div className="text-center py-8">
+                                                        <span className="text-5xl">✅</span>
+                                                        <p className="text-gray-600 mt-4">No anomalies detected</p>
+                                                        <p className="text-sm text-gray-500 mt-2">
+                                                            All metrics are within normal thresholds
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-3">
+                                                        {results.anomalies.map((anomaly, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded"
+                                                            >
+                                                                <div className="flex items-start">
+                                                                    <span className="text-2xl mr-3">⚠️</span>
+                                                                    <p className="text-yellow-800 font-medium">{anomaly}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Permits Tab */}
+                                        {activeTab === 'permits' && (
+                                            <div>
+                                                {results.permits.length === 0 ? (
+                                                    <div className="text-center py-8 text-gray-500">
+                                                        No permits found for this address
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {results.permits.slice(0, 10).map((permit, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                                            >
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <h4 className="font-semibold text-gray-900">
+                                                                        {permit.permit_type_definition || 'Permit'}
+                                                                    </h4>
+                                                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                        {permit.status || 'N/A'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-600 mb-1">
+                                                                    📍 {permit.street_name || permit.location || 'N/A'}
+                                                                </p>
+                                                                <p className="text-sm text-gray-600">
+                                                                    📅 {permit.filed_date ? new Date(permit.filed_date).toLocaleDateString() : 'N/A'}
+                                                                </p>
+                                                                {permit.description && (
+                                                                    <p className="text-sm text-gray-500 mt-2">
+                                                                        {permit.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        {results.permits.length > 10 && (
+                                                            <p className="text-center text-gray-500 text-sm">
+                                                                Showing 10 of {results.permits.length} permits
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Businesses Tab */}
+                                        {activeTab === 'businesses' && (
+                                            <div>
+                                                {results.businesses.length === 0 ? (
+                                                    <div className="text-center py-8 text-gray-500">
+                                                        No businesses found for this address
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {results.businesses.slice(0, 10).map((business, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                                            >
+                                                                <div className="flex justify-between items-start mb-2">
+                                                                    <h4 className="font-semibold text-gray-900">
+                                                                        {business.dba_name || 'Business'}
+                                                                    </h4>
+                                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                                        {business.lic_code || 'N/A'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-600 mb-1">
+                                                                    🏷️ {business.lic_code_description || 'N/A'}
+                                                                </p>
+                                                                <p className="text-sm text-gray-600">
+                                                                    📍 {business.business_location || 'N/A'}
+                                                                </p>
+                                                            </div>
+                                                        ))}
+                                                        {results.businesses.length > 10 && (
+                                                            <p className="text-center text-gray-500 text-sm">
+                                                                Showing 10 of {results.businesses.length} businesses
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+	"name": "sf-business-email-worker",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"test:scheduled": "wrangler dev --test-scheduled",
+		"dev:scheduled": "wrangler dev --test-scheduled --log-level debug",
+		"test:watch": "vitest --watch",
+		"local:scheduled": "node scripts/run-scheduled.js",
+		"logs": "wrangler tail",
+		"logs:json": "wrangler tail --format json",
+		"logs:scheduled": "wrangler tail --format pretty | grep -i 'scheduled\\|cron'"
+	},
+	"dependencies": {
+		"@sendgrid/mail": "^8.1.6"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"vitest": "~3.2.0",
+		"wrangler": "^4.46.0"
+	}
+}
